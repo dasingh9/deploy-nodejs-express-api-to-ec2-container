@@ -1,0 +1,35 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up SSH
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+    - name: Deploy to EC2
+      run: |
+        ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }} << 'EOF'
+          # Navigate to the project directory
+          cd /home/ec2-user/games-api
+
+          # Pull the latest code
+          git pull origin main
+
+          # Build and run the Docker container
+          sudo docker build -t games-api .
+          sudo docker stop games-api-container || true
+          sudo docker rm games-api-container || true
+          sudo docker run -d -p 80:3000 --name games-api-container games-api
+        EOF
