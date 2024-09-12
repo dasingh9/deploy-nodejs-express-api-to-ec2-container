@@ -22,7 +22,7 @@ jobs:
       run: |
         ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }} << 'EOF'
           # Navigate to the project directory
-          cd /home/ec2-user/games-api
+          cd /home/ec2-user/deploy-nodejs-express-api-to-ec2-container
 
           # Pull the latest code
           git pull origin main
@@ -33,3 +33,21 @@ jobs:
           sudo docker rm games-api-container || true
           sudo docker run -d -p 80:3000 --name games-api-container games-api
         EOF
+    - name: Deploy to EC2
+      run: |
+        ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }} << 'EOF'
+          # Create directory if it doesn't exist
+          mkdir -p /home/ec2-user/deploy-nodejs-express-api-to-ec2-container
+
+          # Navigate to the project directory
+          cd /home/ec2-user/deploy-nodejs-express-api-to-ec2-container
+
+          # Pull the latest code
+          git pull origin main || git clone https://github.com/dasingh9/deploy-nodejs-express-api-to-ec2-container.git .
+
+          # Build and run the Docker container
+          sudo docker build -t nodejs-express-api .
+          sudo docker stop nodejs-express-container || true
+          sudo docker rm nodejs-express-container || true
+          sudo docker run -d -p 80:3000 --name nodejs-express-container nodejs-express-api
+        EOF        
